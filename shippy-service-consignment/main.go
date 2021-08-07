@@ -2,16 +2,12 @@ package main
 
 import (
 	"context"
+	"errors"
 	pb "github.com/kcwong395/go-micro/shippy-service-consignment/proto/consignment"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
+	vesselProto "github.com/kcwong395/go-micro/shippy-service-vessel/proto/vessel"
+	"github.com/micro/go-micro/v2"
 	"log"
-	"net"
 	"sync"
-)
-
-const (
-	port = ":50051"
 )
 
 type repository interface {
@@ -36,38 +32,55 @@ func (repo *Repository) GetAll() []*pb.Consignment {
 	return repo.consignments
 }
 
-type service struct {
-	repo repository
+type consignmentService struct {
+	repo         repository
+	vesselClient vesselProto.VesselService
 }
 
-func (s *service) GetConsignments(ctx context.Context, request *pb.GetRequest) (*pb.Response, error) {
+func (s *consignmentService) GetConsignments(ctx context.Context, request *pb.GetRequest, res *pb.Response) error {
 	consignments := s.repo.GetAll()
-	return &pb.Response{Consignments: consignments}, nil
+	res.Consignments = consignments
+	return nil
 }
 
-func (s *service) CreateConsignment(ctx context.Context, req *pb.Consignment) (*pb.Response, error) {
+func (s *consignmentService) CreateConsignment(ctx context.Context, req *pb.Consignment, res *pb.Response) error {
+
+	vesselResponse, err := s.vesselClient.FindAvailable(ctx, &vesselProto.Specification{MaxWeight: req.Weight, Capacity: int32(len(req.Containers))})
+	if vesselResponse == nil {
+		return errors.New("error fetching vessel, returned nil")
+	}
+	if err != nil {
+		return err
+	}
+
+	req.VesselId = vesselResponse.Vessel.Id
+
 	consignment, err := s.repo.Create(req)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &pb.Response{Created: true, Consignment: consignment}, nil
+	res.Created = true
+	res.Consignment = consignment
+	return nil
 }
 
 func main() {
 	repo := &Repository{}
 
-	lis, err := net.Listen("tcp", port)
+	service := micro.NewService(
+		micro.Name("shippy.service.consignment"),
+	)
+
+	service.Init()
+	vesselClient := vesselProto.NewVesselService("shippy.service.vessel", service.Client())
+
+	err := pb.RegisterShippingServiceHandler(service.Server(), &consignmentService{repo, vesselClient})
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		log.Panic(err)
 	}
-	s := grpc.NewServer()
 
-	pb.RegisterShippingServiceServer(s, &service{repo})
-
-	reflection.Register(s)
-
-	log.Println("Running on port:", port)
-	if err := s.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+	if err := service.Run(); err != nil {
+		log.Panic(err)
 	}
+
 }
