@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 
+	"errors"
 	pb "github.com/kcwong395/go-micro/shippy-service-consignment/proto/consignment"
 	vesselProto "github.com/kcwong395/go-micro/shippy-service-consignment/proto/vessel"
-	"github.com/pkg/errors"
 )
 
 type handler struct {
