@@ -27,6 +27,9 @@ services:
   # Commands
   cli:
     build: ./shippy-cli-consignment
+    depends_on:
+      - vessel
+      - consignment
 
   # Database tier
   datastore:
