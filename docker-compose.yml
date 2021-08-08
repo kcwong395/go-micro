@@ -24,18 +24,27 @@ services:
       MICRO_SERVER_ADDRESS: ":50051"
       DB_HOST: "mongodb://datastore:27017"
 
+  user:
+    restart: always
+    build: ./shippy-service-user
+    ports:
+      - 50053:50051
+    environment:
+      MICRO_ADDRESS: ":50051"
+      DB_HOST: "database"
+      DB_USER: "admin"
+      DB_PASSWORD: "password"
+      DB_NAME: "postgres"
+
   # Commands
   cli:
     build: ./shippy-cli-consignment
     depends_on:
       - vessel
       - consignment
-  user:
-    build: ./shippy-service-user
-    ports:
-      - 50053:50051
-    environment:
-      MICRO_ADDRESS: ":50051"
+
+  user-cli:
+    build: ./shippy-cli-user
 
   # Database tier
   datastore:
