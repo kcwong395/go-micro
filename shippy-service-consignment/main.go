@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	pb "github.com/kcwong395/go-micro/shippy-service-consignment/proto/consignment"
-	vesselProto "github.com/kcwong395/go-micro/shippy-service-vessel/proto/vessel"
+	vesselProto "github.com/kcwong395/go-micro/shippy-service-consignment/proto/vessel"
 	"github.com/micro/go-micro/v2"
 	"log"
 	"sync"

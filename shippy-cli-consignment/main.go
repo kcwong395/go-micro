@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
-	pb "github.com/kcwong395/go-micro/shippy-service-consignment/proto/consignment"
+	pb "github.com/kcwong395/go-micro/shippy-cli-consignment/proto/consignment"
 	"github.com/micro/go-micro/v2"
 	"io/ioutil"
 	"log"
